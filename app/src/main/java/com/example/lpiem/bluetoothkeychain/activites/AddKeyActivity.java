@@ -1,6 +1,7 @@
 package com.example.lpiem.bluetoothkeychain.activites;
 
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -10,18 +11,20 @@ import android.os.Build;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ListView;
 
-import com.example.lpiem.bluetoothkeychain.DeviceListAdapter;
+import com.example.lpiem.bluetoothkeychain.adapter.DeviceListAdapter;
 import com.example.lpiem.bluetoothkeychain.Manifest;
 import com.example.lpiem.bluetoothkeychain.R;
 
 import java.util.ArrayList;
 
 
-public class AddKeyActivity extends AppCompatActivity {
+public class AddKeyActivity extends AppCompatActivity implements AdapterView.OnItemClickListener {
     Button btnConnectBluetooth;
     BluetoothAdapter bluetooth;
     public ArrayList<BluetoothDevice> mBTDevices = new ArrayList<>();
@@ -114,14 +117,40 @@ public class AddKeyActivity extends AppCompatActivity {
         }
     };
 
+    /**
+     * Broadcast Receiver that detects bond state changes (Pairing status changes)
+     */
+    private BroadcastReceiver mBroadcastReceiver4 = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final String action = intent.getAction();
+            if (action.equals(BluetoothDevice.ACTION_BOND_STATE_CHANGED)){
+                BluetoothDevice device = intent.getParcelableExtra (BluetoothDevice.EXTRA_DEVICE);
+                //case1: bonded already
+                if (device.getBondState() == BluetoothDevice.BOND_BONDED){
+                    Log.d("mlk", "BroadcastReceiver: BOND_BONDED.");
+                }
+                //case2: creating a bond
+                if (device.getBondState() == BluetoothDevice.BOND_BONDING) {
+                    Log.d("mlk", "BroadcastReceiver: BOND_BONDING.");
+                }
+                //case3: breaking a bond
+                if (device.getBondState() == BluetoothDevice.BOND_NONE) {
+                    Log.d("mlk", "BroadcastReceiver: BOND_NONE.");
+                }
+            }
+        }
+    };
 
 
     @Override
     protected void onDestroy() {
         Log.d("mlk", "onDestroy: called.");
         super.onDestroy();
-        unregisterReceiver(mBroadcastReceiver1);
-        unregisterReceiver(mBroadcastReceiver2);
+//        unregisterReceiver(mBroadcastReceiver1);
+//        unregisterReceiver(mBroadcastReceiver2);
+//        unregisterReceiver(mBroadcastReceiver3);
+//        unregisterReceiver(mBroadcastReceiver4);
     }
 
 
@@ -130,10 +159,20 @@ public class AddKeyActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_key);
 
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        setTitle("Ajouter une clé");
+
         btnConnectBluetooth = findViewById(R.id.btnConnectBluetooth);
-        bluetooth = BluetoothAdapter.getDefaultAdapter();
         lvNewDevices = (ListView) findViewById(R.id.devicesList);
         mBTDevices = new ArrayList<>();
+
+        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
+        registerReceiver(mBroadcastReceiver4, filter);
+        Intent intentBond = new Intent(this, BluetoothClass.Service.class);
+        startService(intentBond);
+
+        bluetooth = BluetoothAdapter.getDefaultAdapter();
+        lvNewDevices.setOnItemClickListener(AddKeyActivity.this);
 
         btnConnectBluetooth.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -157,6 +196,17 @@ public class AddKeyActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                finish();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 
     public void btnEnableDisable_Discoverable(View view) {
@@ -215,4 +265,20 @@ public class AddKeyActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
+        //first cancel discovery because its very memory intensive.
+        bluetooth.cancelDiscovery();
+
+        Log.d("mlk", "onItemClick: You Clicked on a device.");
+        String deviceName = mBTDevices.get(position).getName();
+        String deviceAddress = mBTDevices.get(position).getAddress();
+
+        Log.d("mlk", "onItemClick: deviceName = " + deviceName);
+        Log.d("mlk", "onItemClick: deviceAddress = " + deviceAddress);
+
+        //create the bond.
+        Log.d("mlk", "Trying to pair with " + deviceName);
+        mBTDevices.get(position).createBond();
+    }
 }

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.example.lpiem.bluetoothkeychain">
 
     <uses-feature
@@ -11,6 +12,8 @@
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.BLUETOOTH_PRIVILEGED"
+        tools:ignore="ProtectedPermissions" />
 
     <permission
         android:name="android.permission.BLUETOOTH"
@@ -33,7 +36,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".activites.AddKeyActivity" />
+        <activity android:name=".activites.AddKeyActivity" android:theme="@style/AppTheme"/>
         <activity android:name=".activites.ScanKeyActivity"></activity>
     </application>
 
