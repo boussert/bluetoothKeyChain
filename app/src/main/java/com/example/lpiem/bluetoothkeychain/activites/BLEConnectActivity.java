@@ -1,39 +1,32 @@
 package com.example.lpiem.bluetoothkeychain.activites;
 
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
 import android.bluetooth.BluetoothGatt;
-import android.bluetooth.BluetoothGattCallback;
-import android.bluetooth.BluetoothGattCharacteristic;
-import android.bluetooth.BluetoothGattService;
-import android.bluetooth.BluetoothManager;
-import android.bluetooth.le.AdvertiseData;
-import android.bluetooth.le.AdvertiseSettings;
-import android.content.Context;
-import android.content.Intent;
-import android.opengl.Visibility;
-import android.os.ParcelUuid;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.os.Handler;
+import android.support.constraint.ConstraintLayout;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
-import android.widget.AdapterView;
 import android.widget.Button;
-import android.widget.ListView;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.clj.fastble.BleManager;
 import com.clj.fastble.callback.BleGattCallback;
+import com.clj.fastble.callback.BleRssiCallback;
 import com.clj.fastble.callback.BleScanCallback;
 import com.clj.fastble.callback.BleWriteCallback;
 import com.clj.fastble.data.BleDevice;
 import com.clj.fastble.exception.BleException;
 import com.clj.fastble.scan.BleScanRuleConfig;
 import com.example.lpiem.bluetoothkeychain.R;
-import com.example.lpiem.bluetoothkeychain.adapter.DeviceListAdapter;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -43,6 +36,14 @@ public class BLEConnectActivity extends AppCompatActivity {
     private Button testSendData;
     private Button pickerBlue;
     private Button pickerGreen;
+    private Button findKey;
+    private ConstraintLayout layoutSearch;
+    private ConstraintLayout layoutScan;
+    private TextView txtMetres;
+
+    private boolean inFindMode;
+    private boolean isBuzzing;
+
     private BleDevice foundDevice;
     private BluetoothGatt mBluetoothGatt;
 
@@ -51,11 +52,18 @@ public class BLEConnectActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bleconnect);
 
-        deviceFound = (TextView) findViewById(R.id.deviceFound);
-        testSendData = (Button) findViewById(R.id.testSendData);
+        setTitle("Key finder");
+        inFindMode = false;
+
+        deviceFound = findViewById(R.id.deviceFound);
+        testSendData = findViewById(R.id.testSendData);
         testSendData.setVisibility(View.GONE);
-        pickerBlue = (Button) findViewById(R.id.pickerBlue);
-        pickerGreen = (Button) findViewById(R.id.pickerGreen);
+        pickerBlue = findViewById(R.id.pickerBlue);
+        pickerGreen = findViewById(R.id.pickerGreen);
+        findKey = findViewById(R.id.findKey);
+        layoutSearch = findViewById(R.id.layoutSearch);
+        layoutScan = findViewById(R.id.layoutFind);
+        txtMetres = findViewById(R.id.metres);
 
         BleManager.getInstance().init(getApplication());
 
@@ -128,6 +136,127 @@ public class BLEConnectActivity extends AppCompatActivity {
                 @Override
                 public void onClick(View v) {
                     writeData(data);
+                }
+            });
+
+            // UI //
+            findKey.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+
+                    if (inFindMode){
+
+                        inFindMode = !inFindMode;
+                        findKey.setText("Trouver");
+                        layoutSearch.setVisibility(View.VISIBLE);
+                        layoutScan.setVisibility(View.INVISIBLE);
+
+                    } else {
+
+                        inFindMode = !inFindMode;
+                        layoutSearch.setVisibility(View.INVISIBLE);
+                        findKey.setText("Trouvé !");
+                        layoutScan.setVisibility(View.VISIBLE);
+
+                        // Faire buzzer
+                        final Button btnBuzz = findViewById(R.id.btnBuzz);
+                        btnBuzz.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+
+                                if(isBuzzing){
+                                    isBuzzing = !isBuzzing;
+                                    btnBuzz.setText("Faire sonner");
+                                    String str = "BUZZSTOP";
+                                    byte[] data = str.getBytes();
+                                    writeData(data);
+
+                                } else {
+                                    isBuzzing = !isBuzzing;
+                                    btnBuzz.setText("Arrêter la sonnerie");
+                                    String str = "BUZZ";
+                                    byte[] data = str.getBytes();
+                                    writeData(data);
+                                }
+                            }
+                        });
+
+                        // Changement du nombre de mètres
+                        final Handler handler = new Handler();
+                        handler.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+
+                                if(inFindMode){
+                                    txtMetres.setText(foundDevice.getRssi() + " m");
+                                }
+                                handler.postDelayed(this, 1000);
+
+                            }
+                        }, 1000);
+
+//                        Thread thread = new Thread(){
+//                            @Override
+//                            public void run() {
+//                                try {
+//
+//                                        while(inFindMode) {
+//                                            wait(1000);
+//
+//                                            runOnUiThread(new Runnable() {
+//                                                @Override
+//                                                public void run() {
+//                                                    txtMetres.setText(foundDevice.getRssi() + " m");
+//                                                }
+//                                            });
+//                                        }
+//
+//                                } catch (InterruptedException e) {
+//                                    e.printStackTrace();
+//                                } };
+//                        };
+//                        thread.start();
+
+//                            BleManager.getInstance().readRssi(foundDevice, new BleRssiCallback() {
+//                                @Override
+//                                public void onRssiFailure(BleException e) {
+//                                    Log.d("mlk", "rssiFailure");
+//                                }
+//
+//                                @Override
+//                                public void onRssiSuccess(int i) {
+//                                    Log.d("mlk", "onRssiSuccess");
+//
+//                                    txtMetres.setText(foundDevice.getRssi()+" m");
+//                                }
+//                            });
+
+
+                        // Changement de la couleur du thermomètre
+                        ImageView btnThermometre = findViewById(R.id.thermometre);
+                        ImageView halo = findViewById(R.id.thermometreHalo);
+
+                        // animation du bouton thermomètre
+                        ObjectAnimator fadeOut = ObjectAnimator.ofFloat(halo, "alpha", .5f, .1f);
+                        fadeOut.setDuration(1200);
+                        ObjectAnimator fadeIn = ObjectAnimator.ofFloat(halo, "alpha", .1f, .5f);
+                        fadeIn.setDuration(1200);
+
+                        final AnimatorSet mAnimationSet = new AnimatorSet();
+                        mAnimationSet.play(fadeIn).after(fadeOut);
+                        mAnimationSet.addListener(new AnimatorListenerAdapter() {
+                            @Override
+                            public void onAnimationEnd(Animator animation) {
+                                super.onAnimationEnd(animation);
+                                mAnimationSet.start();
+                            }
+                        });
+                        mAnimationSet.start();
+
+
+
+                    }
+
                 }
             });
 

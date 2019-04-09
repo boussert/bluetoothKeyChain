@@ -30,18 +30,13 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".activites.KeysListActivity">
+        <activity android:name=".activites.BLEConnectActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".activites.AddKeyActivity"
-            android:theme="@style/AppTheme" />
-        <activity android:name=".activites.ScanKeyActivity" />
-        <activity android:name=".activites.BLEConnectActivity"></activity>
     </application>
 
 </manifest>
