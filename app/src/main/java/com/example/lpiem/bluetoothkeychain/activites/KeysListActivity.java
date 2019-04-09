@@ -28,7 +28,8 @@ public class KeysListActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         if (id == R.id.btn_add) {
-            Intent intent = new Intent(KeysListActivity.this, AddKeyActivity.class);
+            //Intent intent = new Intent(KeysListActivity.this, AddKeyActivity.class);
+            Intent intent = new Intent(KeysListActivity.this, BLEConnectActivity.class);
             KeysListActivity.this.startActivity(intent);
             return true;
         }

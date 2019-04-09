@@ -20,16 +20,26 @@ import android.widget.ListView;
 import com.example.lpiem.bluetoothkeychain.adapter.DeviceListAdapter;
 import com.example.lpiem.bluetoothkeychain.Manifest;
 import com.example.lpiem.bluetoothkeychain.R;
+import com.example.lpiem.bluetoothkeychain.service.KeychainBluetoothService;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.UUID;
 
 
 public class AddKeyActivity extends AppCompatActivity implements AdapterView.OnItemClickListener {
+    private static final String TAG = "AddKeyActivity";
     Button btnConnectBluetooth;
+    Button btnSendData;
+
     BluetoothAdapter bluetooth;
+    KeychainBluetoothService mBluetoothConnection;
+    BluetoothDevice deviceSelected;
     public ArrayList<BluetoothDevice> mBTDevices = new ArrayList<>();
     public DeviceListAdapter mDeviceListAdapter;
     ListView lvNewDevices;
+
+    private static final UUID MY_UUID_INSECURE = UUID.fromString("8ce255c0-200a-11e0-ac64-0800200c9a66");
 
     // Create a BroadcastReceiver for ACTION_FOUND : changement de l'état du bluetooth
     private final BroadcastReceiver mBroadcastReceiver1 = new BroadcastReceiver() {
@@ -129,6 +139,7 @@ public class AddKeyActivity extends AppCompatActivity implements AdapterView.OnI
                 //case1: bonded already
                 if (device.getBondState() == BluetoothDevice.BOND_BONDED){
                     Log.d("mlk", "BroadcastReceiver: BOND_BONDED.");
+                    startConnection();
                 }
                 //case2: creating a bond
                 if (device.getBondState() == BluetoothDevice.BOND_BONDING) {
@@ -163,6 +174,7 @@ public class AddKeyActivity extends AppCompatActivity implements AdapterView.OnI
         setTitle("Ajouter une clé");
 
         btnConnectBluetooth = findViewById(R.id.btnConnectBluetooth);
+        btnSendData = findViewById(R.id.btnSendData);
         lvNewDevices = (ListView) findViewById(R.id.devicesList);
         mBTDevices = new ArrayList<>();
 
@@ -194,6 +206,15 @@ public class AddKeyActivity extends AppCompatActivity implements AdapterView.OnI
                     btnEnableDisable_Discoverable(v);
                     btnDiscover(v);
                 }
+            }
+        });
+
+        btnSendData.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String key = "Je suis un test pour AdaFruit !";
+                byte[] bytes = key.getBytes(Charset.defaultCharset());
+                mBluetoothConnection.write(bytes);
             }
         });
     }
@@ -279,6 +300,27 @@ public class AddKeyActivity extends AppCompatActivity implements AdapterView.OnI
 
         //create the bond.
         Log.d("mlk", "Trying to pair with " + deviceName);
-        mBTDevices.get(position).createBond();
+        deviceSelected = mBTDevices.get(position);
+        mBluetoothConnection = new KeychainBluetoothService(AddKeyActivity.this);
+        deviceSelected.createBond();
+    }
+
+    //create method for starting connection
+//***remember the conncction will fail and app will crash if you haven't paired first
+    public void startConnection(){
+        if (deviceSelected != null) {
+            startBTConnection(deviceSelected,MY_UUID_INSECURE);
+        }
+
+    }
+
+    /**
+     * starting chat service method
+     */
+    public void startBTConnection(BluetoothDevice device, UUID uuid){
+        Log.d(TAG, "startBTConnection: Initializing RFCOM Bluetooth Connection.");
+        Log.d("mlk", "ready to start client with device" + device.getName());
+        Log.d("mlk", "ready to start client with uuid" + uuid.toString());
+        mBluetoothConnection.startClient(device,uuid);
     }
 }

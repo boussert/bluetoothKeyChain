@@ -12,7 +12,8 @@
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.BLUETOOTH_PRIVILEGED"
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_PRIVILEGED"
         tools:ignore="ProtectedPermissions" />
 
     <permission
@@ -36,8 +37,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".activites.AddKeyActivity" android:theme="@style/AppTheme"/>
-        <activity android:name=".activites.ScanKeyActivity"></activity>
+        <activity
+            android:name=".activites.AddKeyActivity"
+            android:theme="@style/AppTheme" />
+        <activity android:name=".activites.ScanKeyActivity" />
+        <activity android:name=".activites.BLEConnectActivity"></activity>
     </application>
 
 </manifest>
