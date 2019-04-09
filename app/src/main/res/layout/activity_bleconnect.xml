@@ -23,7 +23,7 @@
         android:id="@+id/layoutFind"
         android:layout_width="0dp"
         android:layout_height="332dp"
-        android:visibility="visible"
+        android:visibility="invisible"
         app:layout_constraintBottom_toTopOf="@+id/findKey"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

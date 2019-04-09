@@ -29,6 +29,8 @@ import com.example.lpiem.bluetoothkeychain.R;
 import com.skyfishjy.library.RippleBackground;
 
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 
 public class BLEConnectActivity extends AppCompatActivity {
@@ -118,7 +120,8 @@ public class BLEConnectActivity extends AppCompatActivity {
 
                 @Override
                 public void onClick(View v) {
-                    writeData(data);
+                    //writeData(data);
+                    doCheckRssi();
                 }
             });
             pickerBlue.setOnClickListener(new View.OnClickListener() {
@@ -152,12 +155,14 @@ public class BLEConnectActivity extends AppCompatActivity {
                         layoutSearch.setVisibility(View.VISIBLE);
                         layoutScan.setVisibility(View.INVISIBLE);
 
+
                     } else {
 
                         inFindMode = !inFindMode;
                         layoutSearch.setVisibility(View.INVISIBLE);
                         findKey.setText("Trouvé !");
                         layoutScan.setVisibility(View.VISIBLE);
+                        doCheckRssi();
 
                         // Faire buzzer
                         final Button btnBuzz = findViewById(R.id.btnBuzz);
@@ -195,7 +200,7 @@ public class BLEConnectActivity extends AppCompatActivity {
 //
 //                            }
 //                        }, 1000);
-
+/*
                         Thread thread = new Thread(){
                             @Override
                             public void run() {
@@ -216,7 +221,7 @@ public class BLEConnectActivity extends AppCompatActivity {
                                     e.printStackTrace();
                                 } };
                         };
-                        thread.start();
+                        thread.start(); */
 
 //                            BleManager.getInstance().readRssi(foundDevice, new BleRssiCallback() {
 //                                @Override
@@ -270,6 +275,7 @@ public class BLEConnectActivity extends AppCompatActivity {
             @Override
             public void onDisConnected(boolean isActiveDisConnected, BleDevice bleDevice, BluetoothGatt gatt, int status) {
                 Log.d("BLEConnectActivity", "Device disconnected... Status: "+status);
+                connectDevice(bleDevice);
             }
         });
     }
@@ -294,11 +300,54 @@ public class BLEConnectActivity extends AppCompatActivity {
         );
     }
 
-    void enableBluetooth() {
+    void doCheckRssi() {
+        if (foundDevice != null) {
+            BleManager.getInstance().readRssi(
+                foundDevice,
+                new BleRssiCallback() {
+
+                    @Override
+                    public void onRssiFailure(BleException exception) {
+                        Log.d("onRssiFailure", "RSSI CHECK FAILURE " +exception.getDescription());
+                    }
+
+                    @Override
+                    public void onRssiSuccess(int rssi) {
+                        Log.d("onRssiSuccess", "RSSI CHECK SUCCESS -> " + rssi);
+                        if(inFindMode) {
+                            int meters = (int) convertRssiToMeters(rssi);
+                            txtMetres.setText(meters+" m");
+                            final Handler handler = new Handler();
+                            handler.postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    // Do something after 5s = 5000ms
+                                    doCheckRssi();
+                                }
+                            }, 1000);
+                        }
+                    }
+                }
+            );
+        }
 
     }
-    void disableBluetooth() {
 
+    double convertRssiToMeters(int rssi) {
+        int txPower = -59; //hard coded power value. Usually ranges between -59 to -65
+
+        if (rssi == 0) {
+            return 0;
+        }
+
+        double ratio = rssi*1.0/txPower;
+        if (ratio < 1.0) {
+            return Math.pow(ratio,10);
+        }
+        else {
+            double distance =  (0.89976)*Math.pow(ratio,7.7095) + 0.111;
+            return distance;
+        }
     }
 
     public UUID convertFromInteger(int i) {
