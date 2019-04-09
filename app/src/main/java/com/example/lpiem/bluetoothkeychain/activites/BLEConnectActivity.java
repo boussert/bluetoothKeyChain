@@ -26,6 +26,7 @@ import com.clj.fastble.data.BleDevice;
 import com.clj.fastble.exception.BleException;
 import com.clj.fastble.scan.BleScanRuleConfig;
 import com.example.lpiem.bluetoothkeychain.R;
+import com.skyfishjy.library.RippleBackground;
 
 import java.util.List;
 import java.util.UUID;
@@ -182,40 +183,40 @@ public class BLEConnectActivity extends AppCompatActivity {
                         });
 
                         // Changement du nombre de mètres
-                        final Handler handler = new Handler();
-                        handler.postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-
-                                if(inFindMode){
-                                    txtMetres.setText(foundDevice.getRssi() + " m");
-                                }
-                                handler.postDelayed(this, 1000);
-
-                            }
-                        }, 1000);
-
-//                        Thread thread = new Thread(){
+//                        final Handler handler = new Handler();
+//                        handler.postDelayed(new Runnable() {
 //                            @Override
 //                            public void run() {
-//                                try {
 //
-//                                        while(inFindMode) {
-//                                            wait(1000);
+//                                if(inFindMode){
+//                                    txtMetres.setText(foundDevice.getRssi() + " m");
+//                                }
+//                                handler.postDelayed(this, 1000);
 //
-//                                            runOnUiThread(new Runnable() {
-//                                                @Override
-//                                                public void run() {
-//                                                    txtMetres.setText(foundDevice.getRssi() + " m");
-//                                                }
-//                                            });
-//                                        }
-//
-//                                } catch (InterruptedException e) {
-//                                    e.printStackTrace();
-//                                } };
-//                        };
-//                        thread.start();
+//                            }
+//                        }, 1000);
+
+                        Thread thread = new Thread(){
+                            @Override
+                            public void run() {
+                                try {
+
+                                        while(inFindMode) {
+                                            sleep(1000);
+
+                                            runOnUiThread(new Runnable() {
+                                                @Override
+                                                public void run() {
+                                                    txtMetres.setText(foundDevice.getRssi() + " m");
+                                                }
+                                            });
+                                        }
+
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                } };
+                        };
+                        thread.start();
 
 //                            BleManager.getInstance().readRssi(foundDevice, new BleRssiCallback() {
 //                                @Override
@@ -232,29 +233,9 @@ public class BLEConnectActivity extends AppCompatActivity {
 //                            });
 
 
-                        // Changement de la couleur du thermomètre
-                        ImageView btnThermometre = findViewById(R.id.thermometre);
-                        ImageView halo = findViewById(R.id.thermometreHalo);
-
-                        // animation du bouton thermomètre
-                        ObjectAnimator fadeOut = ObjectAnimator.ofFloat(halo, "alpha", .5f, .1f);
-                        fadeOut.setDuration(1200);
-                        ObjectAnimator fadeIn = ObjectAnimator.ofFloat(halo, "alpha", .1f, .5f);
-                        fadeIn.setDuration(1200);
-
-                        final AnimatorSet mAnimationSet = new AnimatorSet();
-                        mAnimationSet.play(fadeIn).after(fadeOut);
-                        mAnimationSet.addListener(new AnimatorListenerAdapter() {
-                            @Override
-                            public void onAnimationEnd(Animator animation) {
-                                super.onAnimationEnd(animation);
-                                mAnimationSet.start();
-                            }
-                        });
-                        mAnimationSet.start();
-
-
-
+                       // Changement de la couleur du thermomètre
+                        final RippleBackground rippleBackground= findViewById(R.id.content);
+                        rippleBackground.startRippleAnimation();
                     }
 
                 }
